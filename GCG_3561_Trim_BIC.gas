@@ -1,0 +1,76 @@
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+v.Local.sFile.Declare(string)
+v.Local.sRet.Declare(string)
+v.Local.iCount.Declare(long)
+v.Local.sTempLeft.Declare(string)
+v.Local.sTempRight.Declare(string)
+v.Local.bPeriod.Declare(boolean)
+
+'get the ACH File
+f.Intrinsic.UI.ShowOpenFileDialog("","",v.Caller.GlobalDir,v.Local.sFile)
+f.Intrinsic.Control.If(v.Local.sFile,=,"***CANCEL***")
+	f.Intrinsic.Control.End
+f.Intrinsic.Control.EndIf
+
+'read the ACH File
+f.Intrinsic.File.File2String(v.Local.sFile,v.Local.sRet)
+'split on new line
+f.Intrinsic.String.Split(v.Local.sRet,v.Ambient.NewLine,v.Local.sRet)
+
+'look through the file for line starting with 5 and 6 
+f.Intrinsic.Control.DoUntil(v.Local.iCount,>,v.Local.sRet.UBound)
+	f.Intrinsic.Control.If(v.Local.sRet(v.Local.iCount).left1,=,"5")
+		f.Intrinsic.String.Left(v.Local.sRet(v.Local.iCount),79,v.Local.sTempLeft)
+		f.Intrinsic.String.Mid(v.Local.sRet(v.Local.iCount),83,12,v.Local.sTempRight)
+		f.Intrinsic.String.Build("{0}   {1}",v.Local.sTempLeft,v.Local.sTempRight,v.Local.sRet(v.Local.iCount))
+		
+	f.Intrinsic.Control.ElseIf(v.Local.sRet(v.Local.iCount).Left1,=,"6")
+		f.Intrinsic.String.Left(v.Local.sRet(v.Local.iCount),79,v.Local.sTempLeft)
+		f.Intrinsic.String.Mid(v.Local.sRet(v.Local.iCount),83,12,v.Local.sTempRight)
+		f.Intrinsic.String.Build("{0}   {1}",v.Local.sTempLeft,v.Local.sTempRight,v.Local.sRet(v.Local.iCount))
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Math.Add(v.Local.iCount,1,v.Local.iCount)
+f.Intrinsic.Control.Loop
+
+'put the file back together and save it
+f.Intrinsic.String.Join(v.Local.sRet,v.Ambient.NewLine,v.Local.sRet)
+f.Intrinsic.UI.ShowSaveFileDialog("","*.txt",v.Local.sFile)
+f.Intrinsic.Control.If(v.Local.sFile,=,"***CANCEL***")
+	F.Intrinsic.Control.End
+f.Intrinsic.Control.Else
+	'Checks to see if a period is in it and if it isn't then add .txt
+	f.Intrinsic.String.Instr(v.Local.sFile,".",,v.Local.bPeriod)
+	f.Intrinsic.Control.If(v.Local.bPeriod,=,false)
+		f.Intrinsic.String.Build("{0}.txt",v.Local.sFile,v.Local.sFile)
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.EndIf
+
+F.Intrinsic.File.String2File(V.Local.sFile,V.Local.sRet)
+
+f.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3561_Trim_BIC.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$Strider$}$1/26/2016 8:36:39 AM$}$False
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$This GAB Script will trim the three zeros preceding the Routing/BIC Number in the standard ACH output file.
+
+Program.Sub.Comments.End
